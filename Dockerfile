@@ -1,32 +1,36 @@
 FROM ubuntu:18.04
 MAINTAINER Laurent Modolo
 
-ENV PACKAGES curl openjdk-8-jre git
+ENV PACKAGES wget openjdk-8-jre git
 
 RUN apt update && \
     apt install -y ${PACKAGES}
 
-RUN wget -qO- https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh | bash <<EOF
+RUN git clone https://github.com/l-modolo/nf_conda_bugreport.git && \
+bash nf_conda_bugreport/conda_install.sh
 
-yes
+ENV PATH="/root/miniconda3/bin:$PATH"
 
-EOF
-
-RUN source .bashrc &&\
-conda config --add channels defaults &&\
-conda config --add channels bioconda &&\
-conda config --add channels conda-forge &&\
+RUN conda config --add channels defaults && \
+conda config --add channels bioconda && \
+conda config --add channels conda-forge && \
 conda create --yes --name bowtie2 bowtie2=2.3.4.1
-
-RUN wget -qO- https://get.nextflow.io | bash
 
 RUN groupadd -r leaf && \
 useradd --no-log-init -r -g leaf leaf && \
-chmod o+rx -R /root/
+chmod o+rx -R /root/ && \
+mkdir -p /home/leaf/ && \
+chown leaf -R /home/leaf && \
+cp /root/.bashrc /home/leaf/
 
-RUN su leaf &&\
-source .bashrc
-cd &&\
-wget -qO- https://get.nextflow.io | bash &&
-git clone https://github.com/l-modolo/nf_conda_
+RUN wget -qO- https://get.nextflow.io | bash && \
+mv nextflow /usr/bin/ && \
+chmod o+rx /usr/bin/nextflow
+
+RUN su leaf && cd && nextflow
+
+
+USER leaf
+
+WORKDIR /home/leaf
 
